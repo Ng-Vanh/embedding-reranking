@@ -1,0 +1,9 @@
+# Model checkpoints and trained models
+*checkpoint*
+best_recall_*
+
+# Model files
+*.safetensors
+*.pt
+*.pth
+
