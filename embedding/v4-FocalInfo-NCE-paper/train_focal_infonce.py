@@ -1,16 +1,4 @@
 """
-Training script with ORIGINAL Focal-InfoNCE Loss for Stage-1 DOM Retrieval
-
-============================================================
-PHIÊN BẢN V4 - PAPER GỐC
-============================================================
-
-Điểm khác biệt với v3:
-- KHÔNG dùng gamma_pos, gamma_neg
-- KHÔNG dùng dropout-aware weighting
-- Dùng SQUARING cho positive: (s^p)^2 / tau
-- Dùng hard negative reweighting: s^n(s^n+m) / tau
-
 Paper: https://openreview.net/pdf?id=j48JCRagwR
 """
 
@@ -41,9 +29,9 @@ from sentence_transformers.evaluation import SentenceEvaluator
 from focal_infonce_loss import OriginalFocalInfoNCELoss, SimplifiedOriginalFocalInfoNCELoss
 
 
-# ============================================================
+
 # 1. CONFIG
-# ============================================================
+
 
 MODEL_NAME = "BAAI/bge-small-en-v1.5"
 
@@ -72,16 +60,12 @@ EMBEDDING_DIM = 256  # Projection dimension
 # Evaluation
 RECALL_K = 50
 
-# ============================================================
+
 # ORIGINAL FOCAL-INFONCE HYPERPARAMETERS (PAPER)
-# ============================================================
+
 # CHỈ có 2 parameters theo paper gốc
 TEMPERATURE = 0.05  # tau = 0.05
 MARGIN = 0.25  # m = 0.25
-
-# ❌ KHÔNG CÓ gamma_pos, gamma_neg trong paper gốc
-# ❌ KHÔNG CÓ focal weighting
-# ❌ KHÔNG CÓ dropout-aware
 
 # Use simplified version for easier debugging
 USE_SIMPLIFIED_LOSS = True
@@ -90,9 +74,9 @@ USE_SIMPLIFIED_LOSS = True
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-# ============================================================
+
 # 2. SET SEED
-# ============================================================
+
 
 def set_seed(seed: int):
     random.seed(seed)
@@ -104,9 +88,9 @@ def set_seed(seed: int):
 set_seed(SEED)
 
 
-# ============================================================
+
 # 3. LOAD TRAIN DATA
-# ============================================================
+
 
 def load_train_data(path: str) -> List[InputExample]:
     """Load training data with query-positive pairs"""
@@ -127,9 +111,7 @@ def load_train_data(path: str) -> List[InputExample]:
     return samples
 
 
-print("\n" + "="*70)
-print(" ORIGINAL FOCAL-INFONCE TRAINING (PAPER) - STAGE 1 DOM RETRIEVAL")
-print("="*70)
+
 
 print("\nLoading train data...")
 train_samples = load_train_data(TRAIN_JSON)
@@ -141,9 +123,9 @@ train_dataset = Dataset.from_dict({
 })
 
 
-# ============================================================
+
 # 4. LOAD EVAL DATA
-# ============================================================
+
 
 print("\nLoading eval data...")
 with open(EVAL_JSON, "r", encoding="utf-8") as f:
@@ -157,9 +139,9 @@ eval_dataset = Dataset.from_dict({
 })
 
 
-# ============================================================
+
 # 5. MODEL SETUP
-# ============================================================
+
 
 print("\n" + "-"*70)
 print(" MODEL SETUP")
@@ -216,13 +198,11 @@ print(f"  - Embedding dimension: {EMBEDDING_DIM}")
 print(f"  - Device: {DEVICE}")
 
 
-# ============================================================
+
 # 6. LOSS FUNCTION - ORIGINAL FOCAL-INFONCE (PAPER)
-# ============================================================
+
 
 print("\n" + "-"*70)
-print(" LOSS FUNCTION: ORIGINAL Focal-InfoNCE (Paper Version)")
-print("-"*70)
 
 if USE_SIMPLIFIED_LOSS:
     train_loss = SimplifiedOriginalFocalInfoNCELoss(
@@ -243,24 +223,10 @@ print(f"\nLoss: {loss_name}")
 print(f"  - Temperature (tau): {TEMPERATURE}")
 print(f"  - Margin (m): {MARGIN}")
 
-print("\n" + "="*70)
-print(" ORIGINAL FOCAL-INFONCE FORMULA (PAPER)")
-print("="*70)
-print("  Positive term:  (s^p)^2 / tau")
-print("  Negative term:  s^n * (s^n + m) / tau")
-print("")
-print("  ❌ NO gamma_pos, gamma_neg")
-print("  ❌ NO focal weighting")
-print("  ❌ NO dropout-aware")
-print("")
-print("  ✓ Positive squaring: (s^p)^2")
-print("  ✓ Hard negative reweighting: s^n(s^n+m)")
-print("="*70)
 
 
-# ============================================================
 # 7. EVALUATOR - RECALL@K
-# ============================================================
+
 
 class RecallAtKEvaluator(SentenceEvaluator):
     """
@@ -365,9 +331,9 @@ evaluator = RecallAtKEvaluator(
 )
 
 
-# ============================================================
+
 # 8. CALLBACK - SAVE BEST MODEL
-# ============================================================
+
 
 class BestRecallCallback(TrainerCallback):
     """Save checkpoint when Recall@K improves"""
@@ -409,16 +375,15 @@ class BestRecallCallback(TrainerCallback):
 best_recall_callback = BestRecallCallback(evaluator, OUTPUT_DIR)
 
 
-# ============================================================
+
 # 9. TRAINING ARGUMENTS
-# ============================================================
+
 
 steps_per_epoch = math.ceil(len(train_dataset) / BATCH_SIZE)
 total_steps = steps_per_epoch * NUM_EPOCHS
 warmup_steps = math.ceil(total_steps * WARMUP_RATIO)
 
 print("\n" + "-"*70)
-print(" TRAINING CONFIGURATION")
 print("-"*70)
 print(f"  Batch size: {BATCH_SIZE}")
 print(f"  Epochs: {NUM_EPOCHS}")
@@ -463,9 +428,9 @@ training_args = SentenceTransformerTrainingArguments(
 )
 
 
-# ============================================================
+
 # 10. TRAIN
-# ============================================================
+
 
 trainer = SentenceTransformerTrainer(
     model=model,
@@ -478,19 +443,17 @@ trainer = SentenceTransformerTrainer(
 )
 
 print("\n" + "="*70)
-print(" STARTING TRAINING WITH ORIGINAL FOCAL-INFONCE (PAPER)")
-print("="*70 + "\n")
+print(" STARTING TRAINING")
+
 
 trainer.train()
 
 print("\n" + "="*70)
 print(" TRAINING COMPLETED")
-print("="*70)
 print(f"  Model saved to: {OUTPUT_DIR}")
-print("="*70)
 
-# Final evaluation
-print("\n\nRunning final evaluation...")
+
+
 final_score = evaluator(model, epoch=NUM_EPOCHS, steps=-1)
 print(f"\nFinal Recall@{RECALL_K}: {final_score:.4f}")
 print("\n" + "="*70)

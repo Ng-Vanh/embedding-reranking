@@ -31,15 +31,15 @@ from sentence_transformers import (
     SentenceTransformerTrainer,
     SentenceTransformerTrainingArguments
 )
-from sentence_transformers.evaluation import SentenceEvaluator
+from sentence_transformers.evaluation import SentenceEvaluator # type: ignore
 
 # Import Focal-InfoNCE loss
 from focal_infonce_loss import FocalInfoNCELoss, SimplifiedFocalInfoNCELoss
 
 
-# ============================================================
+
 # 1. CONFIG
-# ============================================================
+
 
 MODEL_NAME = "BAAI/bge-small-en-v1.5"
 
@@ -81,9 +81,9 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 USE_SIMPLIFIED_LOSS = True
 
 
-# ============================================================
+
 # 2. SET SEED
-# ============================================================
+
 
 def set_seed(seed: int):
     random.seed(seed)
@@ -95,9 +95,9 @@ def set_seed(seed: int):
 set_seed(SEED)
 
 
-# ============================================================
+
 # 3. LOAD TRAIN DATA
-# ============================================================
+
 
 def load_train_data(path: str) -> List[InputExample]:
     """Load training data with query-positive pairs"""
@@ -132,9 +132,9 @@ train_dataset = Dataset.from_dict({
 })
 
 
-# ============================================================
+
 # 4. LOAD EVAL DATA
-# ============================================================
+
 
 print("\nLoading eval data...")
 with open(EVAL_JSON, "r", encoding="utf-8") as f:
@@ -148,9 +148,9 @@ eval_dataset = Dataset.from_dict({
 })
 
 
-# ============================================================
+
 # 5. MODEL SETUP
-# ============================================================
+
 
 print("\n" + "-"*70)
 print(" MODEL SETUP")
@@ -201,15 +201,15 @@ model = SentenceTransformer(
 )
 
 print(f"\nModel architecture:")
-print(f"  - Base model: {MODEL_NAME}")
-print(f"  - Max sequence length: {MAX_SEQ_LENGTH}")
-print(f"  - Embedding dimension: {EMBEDDING_DIM}")
-print(f"  - Device: {DEVICE}")
+print(f"  Base model: {MODEL_NAME}")
+print(f"  Max sequence length: {MAX_SEQ_LENGTH}")
+print(f"  Embedding dimension: {EMBEDDING_DIM}")
+print(f"  Device: {DEVICE}")
 
 
-# ============================================================
+
 # 6. LOSS FUNCTION - FOCAL-INFONCE
-# ============================================================
+
 
 print("\n" + "-"*70)
 print(" LOSS FUNCTION: Focal-InfoNCE")
@@ -235,20 +235,20 @@ else:
     loss_name = "FocalInfoNCELoss"
 
 print(f"\nLoss: {loss_name}")
-print(f"  - Temperature (tau): {TEMPERATURE}")
-print(f"  - Margin (m): {MARGIN}")
-print(f"  - Gamma_pos: {GAMMA_POS}")
-print(f"  - Gamma_neg: {GAMMA_NEG}")
+print(f"  Temperature (tau): {TEMPERATURE}")
+print(f"  Margin (m): {MARGIN}")
+print(f"  Gamma_pos: {GAMMA_POS}")
+print(f"  Gamma_neg: {GAMMA_NEG}")
 
 print("\nFocal-InfoNCE features:")
-print("  ✓ Hard negative mining: focus on high-similarity negatives")
-print("  ✓ Dropout noise aware: reduce penalty for low-similarity positives")
-print("  ✓ Improved alignment & uniformity")
+print("  Hard negative mining: focus on high-similarity negatives")
+print("  Dropout noise aware: reduce penalty for low-similarity positives")
+print("  Improved alignment & uniformity")
 
 
-# ============================================================
+
 # 7. EVALUATOR - RECALL@K
-# ============================================================
+
 
 class RecallAtKEvaluator(SentenceEvaluator):
     """
@@ -353,9 +353,9 @@ evaluator = RecallAtKEvaluator(
 )
 
 
-# ============================================================
+
 # 8. CALLBACK - SAVE BEST MODEL
-# ============================================================
+
 
 class BestRecallCallback(TrainerCallback):
     """Save checkpoint when Recall@K improves"""
@@ -397,9 +397,9 @@ class BestRecallCallback(TrainerCallback):
 best_recall_callback = BestRecallCallback(evaluator, OUTPUT_DIR)
 
 
-# ============================================================
+
 # 9. TRAINING ARGUMENTS
-# ============================================================
+
 
 steps_per_epoch = math.ceil(len(train_dataset) / BATCH_SIZE)
 total_steps = steps_per_epoch * NUM_EPOCHS
@@ -451,9 +451,9 @@ training_args = SentenceTransformerTrainingArguments(
 )
 
 
-# ============================================================
+
 # 10. TRAIN
-# ============================================================
+
 
 trainer = SentenceTransformerTrainer(
     model=model,
@@ -465,9 +465,7 @@ trainer = SentenceTransformerTrainer(
     callbacks=[best_recall_callback],
 )
 
-print("\n" + "="*70)
-print(" STARTING TRAINING WITH FOCAL-INFONCE")
-print("="*70 + "\n")
+
 
 trainer.train()
 
@@ -477,8 +475,7 @@ print("="*70)
 print(f"  Model saved to: {OUTPUT_DIR}")
 print("="*70)
 
-# Final evaluation
-print("\n\nRunning final evaluation...")
+
 final_score = evaluator(model, epoch=NUM_EPOCHS, steps=-1)
 print(f"\nFinal Recall@{RECALL_K}: {final_score:.4f}")
 print("\n" + "="*70)
