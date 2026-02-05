@@ -1,15 +1,5 @@
 """
 Margin-InfoNCE Loss - InfoNCE với additive margin
-
-Công thức:
-    L_i = -log( exp(s_i^+ / τ) / (exp(s_i^+ / τ) + Σ_j exp((s_ij^- + m) / τ)) )
-
-Khác với InfoNCE gốc:
-    - InfoNCE: exp(s- / τ)
-    - Margin-InfoNCE: exp((s- + m) / τ)
-    
-Margin m làm negatives "harder" → model học tốt hơn
-
 Papers:
     - ANCE: Approximate Nearest Neighbor Negative Contrastive Learning
     - Inspired by ArcFace/CosFace (face recognition)
@@ -23,15 +13,6 @@ from sentence_transformers import SentenceTransformer
 
 
 class MarginInfoNCELoss(nn.Module):
-    """
-    Margin-InfoNCE Loss - InfoNCE với additive margin cho negatives
-    
-    Args:
-        model: SentenceTransformer model
-        temperature: Temperature parameter τ (default: 0.05)
-        margin: Additive margin m cho negatives (default: 0.3)
-    """
-    
     def __init__(
         self,
         model: SentenceTransformer,
@@ -154,50 +135,3 @@ class MarginInfoNCELossWithStats(MarginInfoNCELoss):
         return loss
 
 
-def test_margin_infonce():
-    """
-    Test function để verify Margin-InfoNCE loss
-    """
-    print("Testing Margin-InfoNCE Loss...")
-    print("="*60)
-    
-    batch_size = 8
-    embedding_dim = 128
-    
-    # Mock model
-    class MockModel(nn.Module):
-        def __init__(self, dim):
-            super().__init__()
-            self.linear = nn.Linear(10, dim)
-            
-        def __call__(self, features):
-            emb = self.linear(features['input_ids'].float())
-            emb = F.normalize(emb, p=2, dim=1)
-            return {'sentence_embedding': emb}
-    
-    model = MockModel(embedding_dim)
-    
-    # Dummy input
-    queries = {'input_ids': torch.randn(batch_size, 10)}
-    positives = {'input_ids': torch.randn(batch_size, 10)}
-    
-    # Test with different margins
-    margins = [0.0, 0.1, 0.2, 0.3, 0.5]
-    
-    print("Testing different margin values:")
-    for margin in margins:
-        loss_fn = MarginInfoNCELossWithStats(model, temperature=0.05, margin=margin)
-        loss = loss_fn([queries, positives])
-        
-        print(f"\nMargin = {margin:.1f}:")
-        print(f"  Loss: {loss.item():.4f}")
-        print(f"  Accuracy: {loss_fn.last_stats['accuracy']*100:.1f}%")
-        print(f"  Neg sim (original): {loss_fn.last_stats['neg_sim_mean']:.4f}")
-        print(f"  Neg sim (with margin): {loss_fn.last_stats['neg_sim_with_margin_mean']:.4f}")
-    
-    print("\n" + "="*60)
-    print(" Margin-InfoNCE test passed!")
-
-
-if __name__ == "__main__":
-    test_margin_infonce()

@@ -1,17 +1,7 @@
 """
 Focal-InfoNCE Loss Implementation
-
 Paper: "Improving Unsupervised Sentence Embeddings with Focal-InfoNCE"
 URL: https://openreview.net/pdf?id=j48JCRagwR
-
-Kỹ thuật chính:
-1. Hard Negative Mining: Tăng trọng số cho negative samples khó (similarity cao)
-2. Dropout Noise Aware: Giảm trọng số cho positive samples có similarity thấp do noise
-3. Cải thiện cả alignment và uniformity của embedding space
-
-Loss formula:
-- Positive: exp(s_pos / tau) với re-weighting khi similarity thấp
-- Negative: exp(s_neg * (s_neg + m) / tau) với re-weighting theo độ khó
 """
 
 import torch
@@ -24,12 +14,6 @@ from sentence_transformers.losses.CachedMultipleNegativesRankingLoss import Cach
 
 class FocalInfoNCELoss(nn.Module):
     """
-    Focal-InfoNCE Loss for sentence embeddings
-    
-    Cải tiến so với MultipleNegativesRankingLoss (InfoNCE):
-    - Hard negative mining: Focus vào các negative samples khó
-    - Dropout noise aware: Giảm penalty cho positive pairs có similarity thấp do dropout noise
-    
     Args:
         model: SentenceTransformer model
         scale: Temperature parameter (tau), default=20.0
@@ -60,8 +44,6 @@ class FocalInfoNCELoss(nn.Module):
     
     def forward(self, sentence_features: Iterable[Dict[str, torch.Tensor]], labels: torch.Tensor = None):
         """
-        Forward pass with Focal-InfoNCE loss
-        
         Args:
             sentence_features: List of tokenized sentences [anchor, positive]
             labels: Not used, for compatibility with SentenceTransformer
@@ -94,10 +76,10 @@ class FocalInfoNCELoss(nn.Module):
         # Positive pairs: diagonal elements
         positive_sim = torch.diagonal(similarity_matrix)  # (batch_size,)
         
-        # ============================================================
+        
         # FOCAL-INFONCE: Positive pairs re-weighting
         # Giảm trọng số cho positive có similarity thấp (do dropout noise)
-        # ============================================================
+        
         # w_pos = exp(-gamma_pos * (1 - s_pos))
         # Nếu s_pos thấp → w_pos nhỏ → giảm penalty
         positive_weights = torch.exp(-self.gamma_pos * (1 - positive_sim))
@@ -106,10 +88,10 @@ class FocalInfoNCELoss(nn.Module):
         positive_logits = positive_sim / self.tau
         weighted_positive_logits = positive_logits * positive_weights
         
-        # ============================================================
+        
         # FOCAL-INFONCE: Negative pairs re-weighting
         # Tăng trọng số cho negative có similarity cao (hard negatives)
-        # ============================================================
+        
         # Mask out diagonal (positive pairs)
         mask = torch.eye(batch_size, dtype=torch.bool, device=anchors.device)
         
@@ -129,9 +111,9 @@ class FocalInfoNCELoss(nn.Module):
         negative_logits = negative_sim / self.tau
         weighted_negative_logits = negative_logits + torch.log(negative_weights + 1e-10)
         
-        # ============================================================
+        
         # Compute Focal-InfoNCE Loss
-        # ============================================================
+        
         # Logits matrix: [weighted_positive | weighted_negatives]
         # Shape: (batch_size, batch_size)
         logits = torch.zeros_like(similarity_matrix)
@@ -162,8 +144,6 @@ class FocalInfoNCELoss(nn.Module):
 
 class SimplifiedFocalInfoNCELoss(nn.Module):
     """
-    Simplified Focal-InfoNCE Loss - Dễ hiểu và debug hơn
-    
     Implementation đơn giản hóa với các bước rõ ràng:
     1. Tính similarity matrix
     2. Re-weight positive pairs (dropout noise aware)

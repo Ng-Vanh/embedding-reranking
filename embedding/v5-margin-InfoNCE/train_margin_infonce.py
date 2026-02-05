@@ -1,8 +1,3 @@
-"""
-Training script với Margin-InfoNCE Loss cho Stage-1 DOM Retrieval
-
-Margin-InfoNCE: InfoNCE + additive margin cho negatives
-"""
 
 import json
 import math
@@ -220,8 +215,6 @@ def main():
         torch.cuda.manual_seed_all(SEED)
     
     print("="*60)
-    print("Margin-InfoNCE Loss Training")
-    print("="*60)
     print(f"Model: {MODEL_NAME}")
     print(f"Temperature: {TEMPERATURE}")
     print(f"Margin: {MARGIN}")
@@ -232,11 +225,9 @@ def main():
     print("="*60)
     
     # Load data
-    print("\nLoading training data...")
     train_examples = load_train_data(TRAIN_JSON, USE_BGE_INSTRUCTION)
     print(f"Training examples: {len(train_examples)}")
     
-    print("\nLoading evaluation data...")
     eval_data = load_eval_data(EVAL_JSON, USE_BGE_INSTRUCTION)
     print(f"Evaluation examples: {len(eval_data)}")
     
@@ -245,7 +236,6 @@ def main():
     print(f"Examples with negatives: {non_empty_negs}/{len(eval_data)}")
     
     # Create model
-    print("\nInitializing model...")
     word_embedding_model = models.Transformer(MODEL_NAME, max_seq_length=MAX_SEQ_LENGTH)
     pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
     dense_model = models.Dense(
@@ -312,22 +302,19 @@ def main():
         trainer.add_callback(LoggingCallback(loss))
     
     # Train
-    print("\nStarting training...")
+    print("\nStart train")
     trainer.train()
     
     # Save final model
-    print("\nSaving final model...")
+    print("\nSave model...")
     model.save(os.path.join(OUTPUT_DIR, "final_model"))
     
     # Final evaluation
-    print("\nFinal evaluation...")
     final_result = evaluator(model, output_path=OUTPUT_DIR)
     final_recall = final_result.get("recall", 0.0)
     print(f"\nFinal Recall@{RECALL_K}: {final_recall*100:.2f}%")
     
-    print("\n" + "="*60)
-    print("Training completed!")
-    print("="*60)
+
 
 
 if __name__ == "__main__":

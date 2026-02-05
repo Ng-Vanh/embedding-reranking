@@ -9,17 +9,6 @@ from sentence_transformers import SentenceTransformer
 
 class OriginalFocalInfoNCELoss(nn.Module):
     """
-    Original Focal-InfoNCE Loss (theo đúng paper)
-    
-    Công thức: L_i = -log [ exp((s_i^p)^2 / tau) / Z_i ]
-    Trong đó Z_i = sum_{j≠i} exp(s_ij^n * (s_ij^n + m) / tau) + exp((s_i^p)^2 / tau)
-    
-    Đặc điểm:
-    - Positive term: Squaring similarity -> (s^p)^2 / tau
-    - Negative term: Hard negative mining -> s^n * (s^n + m) / tau
-    - KHÔNG có gamma parameters
-    - KHÔNG có dropout-aware weighting
-    
     Args:
         model: SentenceTransformer model
         temperature: tau parameter (default=0.05)
@@ -40,8 +29,6 @@ class OriginalFocalInfoNCELoss(nn.Module):
     
     def forward(self, sentence_features: Iterable[Dict[str, torch.Tensor]], labels: torch.Tensor = None):
         """
-        Forward pass theo công thức paper gốc
-        
         Args:
             sentence_features: List of tokenized sentences [anchor, positive]
             labels: Not used (for compatibility)
@@ -74,15 +61,15 @@ class OriginalFocalInfoNCELoss(nn.Module):
         # 4. Extract positive similarities (diagonal)
         positive_sim = sim_matrix.diagonal()  # (batch_size,)
         
-        # ============================================================
+        
         # POSITIVE TERM: (s^p)^2 / tau
-        # ============================================================
+        
         # Squaring để tăng gradient cho high-similarity pairs
         positive_logits = (positive_sim ** 2) / self.temperature
         
-        # ============================================================
+        
         # NEGATIVE TERM: s^n * (s^n + m) / tau
-        # ============================================================
+        
         # Mask diagonal (positive pairs)
         mask = torch.eye(batch_size, dtype=torch.bool, device=device)
         
@@ -96,9 +83,9 @@ class OriginalFocalInfoNCELoss(nn.Module):
         # Mask out positive pairs (set to very small value)
         negative_logits = negative_logits.masked_fill(mask, -1e9)
         
-        # ============================================================
+        
         # CONSTRUCT LOGITS MATRIX
-        # ============================================================
+        
         # Logits shape: (batch_size, batch_size)
         # - Diagonal: positive logits (s^p)^2 / tau
         # - Off-diagonal: negative logits s^n(s^n+m) / tau
@@ -106,9 +93,9 @@ class OriginalFocalInfoNCELoss(nn.Module):
         logits = negative_logits.clone()
         logits.diagonal().copy_(positive_logits)
         
-        # ============================================================
+        
         # COMPUTE CROSS-ENTROPY LOSS
-        # ============================================================
+        
         # Target: diagonal elements (index = i for each sample i)
         target = torch.arange(batch_size, dtype=torch.long, device=device)
         
@@ -189,9 +176,9 @@ class SimplifiedOriginalFocalInfoNCELoss(nn.Module):
         }
 
 
-# ============================================================
+
 # UTILITY FUNCTIONS
-# ============================================================
+
 
 def compare_with_infonce(
     anchors: torch.Tensor,
@@ -240,8 +227,6 @@ def analyze_loss_components(
     margin: float = 0.25
 ) -> Dict[str, any]:
     """
-    Phân tích các thành phần của Focal-InfoNCE loss
-    
     Returns:
         dict với các metrics để debug/analyze
     """

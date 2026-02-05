@@ -1,51 +1,5 @@
 """
-Train Stage-1 Retriever with Advanced Contrastive Learning
-============================================================
-
-PHƯƠNG PHÁP CẢI TIẾN từ Paper:
-------------------------------
-
-1. ANCE (Approximate Nearest-neighbor Contrastive Estimation):
-   - Thay vì random in-batch negatives → Sử dụng hard negatives
-   - Hard negatives được lấy từ dense retrieval (top-K gần query nhưng sai)
-   - Giàu thông tin học, gradient mạnh hơn, hội tụ nhanh hơn
-
-2. CLP (Contrastive Learning Penalty):
-   - Khắc phục hạn chế của CL truyền thống
-   - Khi đẩy xa negative document khỏi query hiện tại
-   - Đảm bảo KHÔNG đẩy xa negative khỏi các query thực sự liên quan đến nó
-   - Bảo toàn cấu trúc ngữ nghĩa toàn cục
-
-3. MoE (Mixture of Experts) - Optional:
-   - Thích nghi embedding theo đặc trưng input
-   - Chỉ fine-tune tầng trung gian + MoE
-   - Freeze các tầng còn lại
-
-CẢI TIẾN SO VỚI VERSION GỐC (train_eval_byBGE.py):
----------------------------------------------------
-
-VERSION GỐC (in-batch negatives):
-- Query có 1 positive
-- Negatives = tất cả positive của queries khác trong batch
-- Random, không hard, gradient yếu
-
-VERSION MỚI (ANCE + CLP):
-- Query có 1 positive + K hard negatives (từ neg_candidates)
-- Negatives được chọn từ dense retrieval → Gần query nhưng sai
-- CLP: Penalty khi negative bị đẩy xa khỏi query thực sự liên quan
-- Gradient mạnh hơn, embedding phân biệt tốt hơn
-
-DATASET YÊU CẦU:
-----------------
-{
-    "query": "...",
-    "positive": "...",
-    "neg_candidates": ["neg1", "neg2", ...],  # QUAN TRỌNG: Cần có hard negatives
-    "negative_query_map": {  # Optional: Mapping negative → queries liên quan
-        "neg1": ["related_query1", "related_query2"],
-        "neg2": ["related_query3"]
-    }
-}
+Paper: https://arxiv.org/pdf/2412.17364
 """
 
 import json

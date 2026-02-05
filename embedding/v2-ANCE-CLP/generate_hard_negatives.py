@@ -1,32 +1,4 @@
-"""
-Generate Hard Negatives for ANCE Training
-==========================================
 
-Script này dùng để tạo hard negatives (neg_candidates) cho ANCE training.
-
-PHƯƠNG PHÁP:
-------------
-1. Load baseline model (đã train hoặc pre-trained)
-2. Encode tất cả documents trong corpus
-3. Với mỗi query:
-   - Tìm top-K documents gần nhất (cosine similarity)
-   - Loại bỏ positive document
-   - Lấy K hard negatives (gần query nhưng không phải positive)
-
-OUTPUT:
--------
-File JSON với format:
-{
-    "query": "...",
-    "positive": "...",
-    "neg_candidates": ["neg1", "neg2", ...]  // Hard negatives
-}
-
-USAGE:
-------
-Định nghĩa config trực tiếp trong file rồi chạy:
-python generate_hard_negatives.py
-"""
 
 import json
 from typing import List, Dict, Tuple
@@ -37,9 +9,7 @@ import torch
 from sentence_transformers import SentenceTransformer
 
 
-#═══════════════════════════════════════════════════════════════════════════
-# CONFIG
-#═══════════════════════════════════════════════════════════════════════════
+
 
 # Input/Output paths
 INPUT_JSON = "/mnt/disk2/anhnv/rr/stage1/data/stage1_train_14_01_43562.json"
@@ -62,20 +32,17 @@ def load_data(path: str) -> List[Dict]:
     """Load training data"""
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
-    print(f"[INFO] Loaded {len(data)} samples from {path}")
+    print(f" Loaded {len(data)} samples from {path}")
     return data
 
 
 def build_document_corpus(data: List[Dict]) -> Tuple[List[str], Dict[str, int]]:
     """
-    Build document corpus từ training data
-    
     Returns:
     --------
     documents: List of unique documents
     doc_to_idx: Mapping document → index
     """
-    print("\n[INFO] Building document corpus...")
     
     # Collect all unique documents
     doc_set = set()
@@ -85,7 +52,7 @@ def build_document_corpus(data: List[Dict]) -> Tuple[List[str], Dict[str, int]]:
     documents = list(doc_set)
     doc_to_idx = {doc: idx for idx, doc in enumerate(documents)}
     
-    print(f"[INFO] Total unique documents: {len(documents)}")
+    print(f" Total unique documents: {len(documents)}")
     return documents, doc_to_idx
 
 
@@ -95,13 +62,11 @@ def encode_documents(
     batch_size: int = 128
 ) -> np.ndarray:
     """
-    Encode all documents using the model
-    
     Returns:
     --------
     doc_embeddings: numpy array of shape (num_docs, embedding_dim)
     """
-    print("\n[INFO] Encoding documents...")
+    print("\n Encoding documents...")
     
     doc_embeddings = model.encode(
         documents,
@@ -111,8 +76,8 @@ def encode_documents(
         convert_to_numpy=True
     )
     
-    print(f"[INFO] Encoded {len(documents)} documents")
-    print(f"[INFO] Embedding shape: {doc_embeddings.shape}")
+    print(f" Encoded {len(documents)} documents")
+    print(f" Embedding shape: {doc_embeddings.shape}")
     
     return doc_embeddings
 
@@ -128,15 +93,7 @@ def find_hard_negatives(
     top_k: int = 100
 ) -> List[str]:
     """
-    Find hard negatives for a query
-    
-    Strategy:
-    ---------
-    1. Encode query
-    2. Compute similarity with all documents
-    3. Retrieve top-K documents (excluding positive)
-    4. Return top num_negatives as hard negatives
-    
+
     Args:
     -----
     query: Query string
@@ -196,9 +153,8 @@ def generate_hard_negatives(
     --------
     data_with_negatives: List of dicts with neg_candidates added
     """
-    print(f"\n[INFO] Generating hard negatives...")
-    print(f"[INFO] Num negatives per query: {num_negatives}")
-    print(f"[INFO] Use instruction: {use_instruction}")
+    print(f" Num negatives per query: {num_negatives}")
+    print(f" Use instruction: {use_instruction}")
     
     data_with_negatives = []
     
@@ -231,7 +187,7 @@ def generate_hard_negatives(
         }
         data_with_negatives.append(item_with_neg)
     
-    print(f"[INFO] Generated hard negatives for {len(data_with_negatives)} samples")
+    print(f" Generated hard negatives for {len(data_with_negatives)} samples")
     
     return data_with_negatives
 
@@ -240,14 +196,10 @@ def save_data(data: List[Dict], output_path: str):
     """Save data to JSON file"""
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
-    print(f"\n[INFO] Saved to {output_path}")
+    print(f"\n Saved to {output_path}")
 
 
 def main():
-    print("="*80)
-    print(" GENERATE HARD NEGATIVES FOR ANCE")
-    print("="*80)
-    print(f"\n[CONFIG]")
     print(f"  Input: {INPUT_JSON}")
     print(f"  Output: {OUTPUT_JSON}")
     print(f"  Model: {MODEL_PATH}")
@@ -256,23 +208,19 @@ def main():
     print(f"  Use instruction: {USE_INSTRUCTION}")
     
     # Step 1: Load model
-    print("\n[STEP 1] Loading model...")
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"[INFO] Device: {device}")
+    print(f" Device: {device}")
     
     model = SentenceTransformer(MODEL_PATH, device=device)
-    print(f"[INFO] Model loaded: {MODEL_PATH}")
+    print(f" Model loaded: {MODEL_PATH}")
     
     # Step 2: Load data
-    print("\n[STEP 2] Loading data...")
     data = load_data(INPUT_JSON)
     
     # Step 3: Build document corpus
-    print("\n[STEP 3] Building document corpus...")
     documents, doc_to_idx = build_document_corpus(data)
     
     # Step 4: Encode documents
-    print("\n[STEP 4] Encoding documents...")
     doc_embeddings = encode_documents(
         model=model,
         documents=documents,
@@ -280,7 +228,6 @@ def main():
     )
     
     # Step 5: Generate hard negatives
-    print("\n[STEP 5] Generating hard negatives...")
     data_with_negatives = generate_hard_negatives(
         model=model,
         data=data,
@@ -293,13 +240,9 @@ def main():
     )
     
     # Step 6: Save output
-    print("\n[STEP 6] Saving output...")
     save_data(data_with_negatives, OUTPUT_JSON)
     
     # Statistics
-    print("\n" + "="*80)
-    print(" STATISTICS")
-    print("="*80)
     
     num_with_negatives = sum(1 for item in data_with_negatives if item["neg_candidates"])
     avg_negatives = np.mean([len(item["neg_candidates"]) for item in data_with_negatives])
@@ -308,9 +251,6 @@ def main():
     print(f"  Samples with negatives: {num_with_negatives}")
     print(f"  Avg negatives per sample: {avg_negatives:.2f}")
     print(f"  Output saved to: {OUTPUT_JSON}")
-    print("\n" + "="*80)
-    print(" DONE")
-    print("="*80 + "\n")
 
 
 if __name__ == "__main__":

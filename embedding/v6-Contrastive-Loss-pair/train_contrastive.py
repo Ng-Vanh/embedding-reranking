@@ -75,7 +75,6 @@ USE_STATS_VERSION = True
 
 
 def load_train_data(json_path: str, use_instruction: bool = False) -> List[InputExample]:
-    """Load training data từ JSON"""
     with open(json_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
     
@@ -93,7 +92,6 @@ def load_train_data(json_path: str, use_instruction: bool = False) -> List[Input
 
 
 def load_eval_data(json_path: str, use_instruction: bool = False):
-    """Load evaluation data"""
     with open(json_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
     
@@ -116,7 +114,6 @@ def load_eval_data(json_path: str, use_instruction: bool = False):
 
 
 class RecallEvaluator(SentenceEvaluator):
-    """Evaluator tính Recall@K"""
     
     def __init__(self, eval_data, recall_k=50, name="eval"):
         self.eval_data = eval_data
@@ -198,8 +195,6 @@ class RecallEvaluator(SentenceEvaluator):
 
 
 # TRAINING CALLBACK
-
-
 class LoggingCallback(TrainerCallback):
     """Callback để log statistics"""
     
@@ -232,8 +227,6 @@ def main():
         torch.cuda.manual_seed_all(SEED)
     
     print("="*60)
-    print("Contrastive Loss Training")
-    print("="*60)
     print(f"Model: {MODEL_NAME}")
     print(f"Margin: {MARGIN}")
     print(f"Distance metric: {DISTANCE_METRIC}")
@@ -245,11 +238,9 @@ def main():
     print("="*60)
     
     # Load data
-    print("\nLoading training data...")
     train_examples = load_train_data(TRAIN_JSON, USE_BGE_INSTRUCTION)
     print(f"Training examples: {len(train_examples)}")
     
-    print("\nLoading evaluation data...")
     eval_data = load_eval_data(EVAL_JSON, USE_BGE_INSTRUCTION)
     print(f"Evaluation examples: {len(eval_data)}")
     
@@ -262,7 +253,6 @@ def main():
             print(f"Sample negatives count: {len(first_item['neg_candidates'])} for first example")
     
     # Create model
-    print("\nInitializing model...")
     word_embedding_model = models.Transformer(MODEL_NAME, max_seq_length=MAX_SEQ_LENGTH)
     pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
     dense_model = models.Dense(
@@ -339,7 +329,6 @@ def main():
         trainer.add_callback(LoggingCallback(loss))
     
     # Train
-    print("\nStarting training...")
     trainer.train()
     
     # Save final model
@@ -347,14 +336,10 @@ def main():
     model.save(os.path.join(OUTPUT_DIR, "final_model"))
     
     # Final evaluation
-    print("\nFinal evaluation...")
     final_result = evaluator(model, output_path=OUTPUT_DIR)
     final_recall = final_result.get("recall", 0.0)
     print(f"\nFinal Recall@{RECALL_K}: {final_recall*100:.2f}%")
     
-    print("\n" + "="*60)
-    print("Training completed!")
-    print("="*60)
 
 
 if __name__ == "__main__":
