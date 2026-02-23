@@ -18,7 +18,6 @@ from tqdm import tqdm
 # CONFIG
 
 
-# Model path - thay đổi theo model bạn muốn test
 MODEL_PATH = "/mnt/disk2/anhnv/rr/stage1/v6-Contrastive-Loss-pair/stage1_contrastive_bge-small/final_model"  
 # MODEL_PATH = "BAAI/bge-small-en-v1.5"  
 
@@ -43,7 +42,7 @@ RECALL_K_VALUES = [1, 3, 5, 10, 20,30,40,50]
 
 def load_model(model_path: str) -> SentenceTransformer:
     if os.path.exists(model_path):
-        print(" LOCAL model path")
+        print(" Local model path")
         model = SentenceTransformer(model_path)
     else:
         print(" HuggingFace model name")
