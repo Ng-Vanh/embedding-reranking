@@ -46,7 +46,7 @@ EVAL_JSON  = "/mnt/disk2/anhnv/rr/stage1/data/stage1_eval_2827_120neg.json"
 OUTPUT_DIR = "./stage1_bge-small_ANCE_CLP_v2"
 
 # Training hyperparameters
-BATCH_SIZE = 68  # Giảm batch size vì mỗi sample có nhiều negatives hơn
+BATCH_SIZE = 80  
 NUM_EPOCHS = 40
 LEARNING_RATE = 2e-5
 WARMUP_RATIO = 0.1

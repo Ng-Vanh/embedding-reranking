@@ -6,4 +6,4 @@ best_recall_*
 *.safetensors
 *.pt
 *.pth
-
+*test_results_*

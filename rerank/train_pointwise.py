@@ -21,7 +21,6 @@ from glob import glob
 
 
 
-# 1. DATASET: Chuyển từ listwise -> pointwise
 
 
 class DOMRerankingDataset(Dataset):
