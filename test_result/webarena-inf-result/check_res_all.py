@@ -1,8 +1,8 @@
 import json
 import glob
-folder_path = r"D:\Lab\exp\embedding-reranking\test_result\webarena-inf-result\gemini-wo_explore"
+folder_path = r"D:\Lab\exp\embedding-reranking\test_result\webarena-inf-result\proposal-retry-6"
 
-pattern = "result_*.json"
+pattern = "result*.json"
 file_paths = glob.glob(f"{folder_path}/{pattern}")
 for file_path in file_paths:
     print(f"Checking results in {file_path}")
